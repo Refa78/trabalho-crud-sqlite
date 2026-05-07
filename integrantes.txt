@@ -1,0 +1,20 @@
+Projeto Extensionista da Faculdade Estácio de Sá Niterói (UNESA)
+
+Curso: Desenvolvimento Rápido em Python
+
+Integrantes do Grupo:
+
+1. José Roberto Duarte Hegendorne
+Matrícula: 202502214154
+
+2. Rennan Ferreira de Almeida
+Matrícula: 202502211708
+
+3. Matheus Villela Duarte Ferreira
+Matrícula: 202503759537
+
+4. Pedro Vinícius Nogueira Sant'Anna
+Matrícula: 202503043681
+
+5. Igor Amaral dos Santos
+Matrícula: 202502260512
