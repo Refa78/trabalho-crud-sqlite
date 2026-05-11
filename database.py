@@ -51,7 +51,7 @@ def buscar_aluno_por_id(id_aluno):
     conexao.close()
     return aluno
 
-def atualizar_aluno(id_aluno, nome, email, curso):
+def atualizar_aluno(id_aluno,nome, email, curso):
     conexao = conectar()
     cursor = conexao.cursor()
 

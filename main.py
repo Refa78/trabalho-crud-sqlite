@@ -16,6 +16,15 @@ def menu():
     print("5 - Deletar aluno")
     print("0 - Sair")
 
+def valida_id():
+    while True:
+        try:
+            id_aluno = int(input("Digite o ID do aluno: "))
+            return id_aluno
+        except (ValueError, TypeError):
+            print("Caracter inválido, digite novamente\n")
+ 
+        
 def cadastrar():
     nome = input("Nome do aluno: ")
     email = input("Email do aluno: ")
@@ -35,34 +44,45 @@ def listar():
             print(f"ID: {aluno[0]} | Nome: {aluno[1]} | Email: {aluno[2]} | Curso: {aluno[3]}")
 
 def buscar():
-    id_aluno = int(input("Digite o ID do aluno: "))
-    aluno = buscar_aluno_por_id(id_aluno)
+    
+    #feito pelo josé  função valida_id
+    #id_aluno = int(input("Digite o ID do aluno: "))
+
+    aluno = buscar_aluno_por_id(valida_id())
 
     if aluno:
         print(f"ID: {aluno[0]} | Nome: {aluno[1]} | Email: {aluno[2]} | Curso: {aluno[3]}")
     else:
-        print("Aluno não encontrado.")
+        print("=========================")
+        print("= Aluno não encontrado. =")
+        print("=========================")
+
 
 def atualizar():
-    id_aluno = int(input("Digite o ID do aluno que deseja atualizar: "))
-    aluno = buscar_aluno_por_id(id_aluno)
-
+    # atualização feita pelo josé
+    #id_aluno = int(input("Digite o ID do aluno que deseja atualizar: "))
+    aluno = buscar_aluno_por_id(valida_id())
+  
     if aluno:
+        
         nome = input("Novo nome: ")
         email = input("Novo email: ")
         curso = input("Novo curso: ")
 
-        atualizar_aluno(id_aluno, nome, email, curso)
+        atualizar_aluno(aluno[0], nome, email, curso)
         print("Aluno atualizado com sucesso!")
     else:
-        print("Aluno não encontrado.")
+        print("=========================")
+        print("= Aluno não encontrado. =")
+        print("=========================")
 
 def deletar():
-    id_aluno = int(input("Digite o ID do aluno que deseja deletar: "))
-    aluno = buscar_aluno_por_id(id_aluno)
+    #edição feita pelo josé
+    #id_aluno = int(input("Digite o ID do aluno que deseja deletar: "))
+    aluno = buscar_aluno_por_id(valida_id())
 
     if aluno:
-        deletar_aluno(id_aluno)
+        deletar_aluno(aluno[0])
         print("Aluno deletado com sucesso!")
     else:
         print("Aluno não encontrado.")
