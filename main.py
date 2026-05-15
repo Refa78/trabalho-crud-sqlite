@@ -22,7 +22,16 @@ def valida_id():
             id_aluno = int(input("Digite o ID do aluno: "))
             return id_aluno
         except (ValueError, TypeError):
-            print("Caracter inválido, digite novamente\n")
+            print("============================================")
+            print("=== Caracter inválido, digite novamente ===")
+            print("============================================")
+
+#Mensagem de não encontrado
+# feito pelo josé
+def mensagem_nao_encontrado():
+        print("============================================")
+        print("=== Aluno não encontrado, tente novamente ==")
+        print("============================================")      
  
         
 def cadastrar():
@@ -53,9 +62,7 @@ def buscar():
     if aluno:
         print(f"ID: {aluno[0]} | Nome: {aluno[1]} | Email: {aluno[2]} | Curso: {aluno[3]}")
     else:
-        print("=========================")
-        print("= Aluno não encontrado. =")
-        print("=========================")
+        mensagem_nao_encontrado()
 
 
 def atualizar():
@@ -72,9 +79,7 @@ def atualizar():
         atualizar_aluno(aluno[0], nome, email, curso)
         print("Aluno atualizado com sucesso!")
     else:
-        print("=========================")
-        print("= Aluno não encontrado. =")
-        print("=========================")
+       mensagem_nao_encontrado()
 
 def deletar():
     #edição feita pelo josé
@@ -85,7 +90,7 @@ def deletar():
         deletar_aluno(aluno[0])
         print("Aluno deletado com sucesso!")
     else:
-        print("Aluno não encontrado.")
+        mensagem_nao_encontrado()
 
 def main():
     criar_tabela()
