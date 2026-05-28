@@ -4,7 +4,8 @@ def conectar():
     return sqlite3.connect("sistema.db")
 
 def criar_tabela():
-    conexao = conectar()
+
+    conexao = conectar()  #trocar funcao para (config_database())
     cursor = conexao.cursor()
 
     cursor.execute("""
