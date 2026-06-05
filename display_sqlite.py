@@ -1,15 +1,14 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-# Importa todas as funções do banco de dados criadas no database.py
+# Importa todas as funções do banco de dados criadas no database.py (versão SQLite)
 from database import (
-    criando_sqlite,       # Cria o banco SQLite local
+    criar_tabela,         # Cria o arquivo sistema.db e a tabela 'alunos' se não existir
     inserir_aluno,        # Insere um novo aluno no banco
     listar_alunos,        # Retorna todos os alunos cadastrados
     buscar_aluno_por_id,  # Busca um aluno específico pelo ID
     atualizar_aluno,      # Atualiza os dados de um aluno existente
     deletar_aluno,        # Remove um aluno do banco
-    config_db,            # Verifica se já existe algum banco configurado
 )
 
 # ──────────────────────────────────────────────────────────────────
@@ -35,283 +34,16 @@ FONT_MONO  = ("Consolas", 10)          # Exibição do ID selecionado
 
 
 # ══════════════════════════════════════════════════════════════════
-#  CLASSE: TelaEscolhaDB
-#  Exibida na primeira execução, quando nenhum banco é encontrado.
-#  Equivale ao menu_db() do main.py, mas em janela gráfica.
-# ══════════════════════════════════════════════════════════════════
-class TelaEscolhaDB(tk.Toplevel):
-
-    def __init__(self, parent, callback):
-        super().__init__(parent)
-        # callback é a função que será chamada após o banco ser criado
-        # para dar início à tela principal
-        self.callback = callback
-
-        self.title("Instalação do Banco de Dados")
-        self.resizable(False, False)
-        self.configure(bg=BG)
-
-        self.construir_tela()
-        self.centralizar_janela(420, 300)
-
-        # Bloqueia interação com a janela pai enquanto esta estiver aberta
-        self.grab_set()
-        # Se o usuário fechar pelo X, encerra o programa
-        self.protocol("WM_DELETE_WINDOW", self.sair)
-
-    def centralizar_janela(self, largura, altura):
-        """Posiciona a janela no centro da tela."""
-        self.update_idletasks()
-        x = (self.winfo_screenwidth()  - largura)  // 2
-        y = (self.winfo_screenheight() - altura) // 2
-        self.geometry(f"{largura}x{altura}+{x}+{y}")
-
-    def construir_tela(self):
-        """Monta os widgets da tela de escolha do banco."""
-
-        # Faixa colorida no topo
-        tk.Frame(self, bg=ACCENT, height=6).pack(fill="x")
-
-        # Título e instrução
-        tk.Label(self, text="⚙  Instalação do Banco de Dados",
-                 font=FONT_HEAD, bg=BG, fg=TEXT).pack(pady=(22, 6))
-        tk.Label(self, text="Database Inexistente! Escolha o banco a configurar:",
-                 font=FONT_SMALL, bg=BG, fg=MUTED).pack(pady=(0, 20))
-
-        # Frame que agrupa os botões de escolha
-        frame_botoes = tk.Frame(self, bg=BG)
-        frame_botoes.pack(pady=6)
-
-        # Botão 1 → chama criando_sqlite() do database.py
-        self.criar_botao(frame_botoes,
-                         "1 - SQLite  (local, sem servidor)",
-                         self.escolher_sqlite).pack(fill="x", pady=6, ipady=10)
-
-        # Botão 2 → chama criando_postgree() do database.py
-        self.criar_botao(frame_botoes,
-                         "2 - PostgreSQL  (servidor externo)",
-                         self.escolher_postgree).pack(fill="x", pady=6, ipady=10)
-
-        # Botão 0 → encerra o programa
-        self.criar_botao(frame_botoes,
-                         "0 - Sair",
-                         self.sair, cor=DANGER).pack(fill="x", pady=6, ipady=6)
-
-    def criar_botao(self, parent, texto, comando, cor=PANEL):
-        """Cria e retorna um botão estilizado."""
-        return tk.Button(
-            parent, text=texto, command=comando,
-            font=FONT_BODY, bg=cor, fg=TEXT,
-            activebackground=ACCENT2, activeforeground="white",
-            relief="flat", cursor="hand2", width=38,
-            bd=0, highlightthickness=1, highlightbackground=BORDER
-        )
-
-    def escolher_sqlite(self):
-        """
-        Opção 1: banco local SQLite.
-        Chama criando_sqlite() do database.py, que cria o arquivo sistema.db
-        e a tabela 'alunos' se ainda não existirem.
-        """
-        criando_sqlite()
-        self.destroy()
-        self.callback()  # Abre a tela principal
-
-    def escolher_postgree(self):
-        """
-        Opção 2: banco PostgreSQL.
-        Em vez de chamar criando_postgree() (que usa input() no terminal),
-        abre a janela gráfica TelaConfigPostgree para coletar os dados
-        de conexão em campos de texto visuais.
-        """
-        # Passa o master (App) e o callback para a nova janela poder
-        # abrir a tela principal após a configuração ser concluída
-        TelaConfigPostgree(self.master, self.callback)
-        self.destroy()
-
-    def sair(self):
-        """Encerra o programa inteiro ao fechar esta janela."""
-        self.master.destroy()
-
-
-# ══════════════════════════════════════════════════════════════════
-#  CLASSE: TelaConfigPostgree
-#  Formulário gráfico para configurar a conexão PostgreSQL.
-#  Substitui o loop de input() que existe em criando_postgree()
-#  do database.py, mantendo exatamente a mesma lógica de conexão
-#  e gravação do arquivo conexao.ini.
-# ══════════════════════════════════════════════════════════════════
-class TelaConfigPostgree(tk.Toplevel):
-
-    def __init__(self, parent, callback):
-        super().__init__(parent)
-        # callback é chamado após conexão bem-sucedida para abrir o app
-        self.callback = callback
-
-        self.title("Configurar PostgreSQL")
-        self.resizable(False, False)
-        self.configure(bg=BG)
-
-        self.construir_tela()
-        self.centralizar_janela(420, 450)
-
-        # Bloqueia a janela pai enquanto esta estiver aberta
-        self.grab_set()
-        # Fechar pelo X volta para a tela de escolha do banco
-        self.protocol("WM_DELETE_WINDOW", self.voltar)
-
-    def centralizar_janela(self, largura, altura):
-        """Posiciona a janela no centro da tela."""
-        self.update_idletasks()
-        x = (self.winfo_screenwidth()  - largura)  // 2
-        y = (self.winfo_screenheight() - altura) // 2
-        self.geometry(f"{largura}x{altura}+{x}+{y}")
-
-    def construir_tela(self):
-        """Monta o formulário com os campos de conexão PostgreSQL."""
-
-        # Faixa colorida no topo
-        tk.Frame(self, bg=ACCENT, height=6).pack(fill="x")
-
-        # Título
-        tk.Label(self, text="🐘  Configurar PostgreSQL",
-                 font=FONT_HEAD, bg=BG, fg=TEXT).pack(pady=(20, 4))
-        tk.Label(self, text="Preencha os dados de conexão com o servidor:",
-                 font=FONT_SMALL, bg=BG, fg=MUTED).pack(pady=(0, 16))
-
-        # Frame do formulário com padding lateral
-        form = tk.Frame(self, bg=BG)
-        form.pack(fill="x", padx=30)
-
-        # Campos de entrada — cada um retorna uma StringVar
-        self.campo_host  = self.criar_campo(form, "🌐  Host / Endereço do servidor")
-        self.campo_banco = self.criar_campo(form, "🗄  Nome do banco de dados")
-        self.campo_login = self.criar_campo(form, "👤  Usuário / Login")
-        self.campo_senha = self.criar_campo(form, "🔒  Senha", ocultar=True)
-
-        # Botão de conectar
-        tk.Button(
-            self, text="Conectar e Salvar",
-            command=self.conectar,
-            font=FONT_BODY, bg=ACCENT, fg="white",
-            activebackground=ACCENT2, activeforeground="white",
-            relief="flat", cursor="hand2", bd=0, pady=10
-        ).pack(fill="x", padx=30, pady=(16, 6))
-
-        # Botão de voltar
-        tk.Button(
-            self, text="← Voltar",
-            command=self.voltar,
-            font=FONT_SMALL, bg=PANEL, fg=MUTED,
-            activebackground=BORDER, activeforeground=TEXT,
-            relief="flat", cursor="hand2", bd=0, pady=6,
-            highlightthickness=1, highlightbackground=BORDER
-        ).pack(fill="x", padx=30, pady=(0, 16))
-
-    def criar_campo(self, parent, label, ocultar=False):
-        """
-        Cria um label + Entry dentro do frame do formulário.
-        ocultar=True exibe '●' no lugar dos caracteres (para senha).
-        Retorna a StringVar vinculada ao campo.
-        """
-        tk.Label(parent, text=label, font=FONT_SMALL,
-                 bg=BG, fg=MUTED, anchor="w").pack(fill="x", pady=(6, 1))
-        variavel = tk.StringVar()
-        tk.Entry(
-            parent, textvariable=variavel, font=FONT_BODY,
-            bg=ENTRY_BG, fg=TEXT, insertbackground=ACCENT,
-            relief="flat", bd=8,
-            show="●" if ocultar else "",
-            highlightthickness=1, highlightbackground=BORDER,
-            highlightcolor=ACCENT
-        ).pack(fill="x", pady=(0, 4))
-        return variavel
-
-    def conectar(self):
-        """
-        Lê os campos, testa a conexão com psycopg2 e, se bem-sucedida:
-          1. Cria a tabela 'alunos' se não existir (igual a criando_postgree())
-          2. Salva as credenciais no arquivo conexao.ini
-          3. Fecha esta janela e abre a tela principal via callback
-        Em caso de erro, exibe a mensagem e permite corrigir os dados.
-        """
-        import configparser
-        import psycopg2
-
-        # Lê e valida os campos
-        host  = self.campo_host.get().strip()
-        banco = self.campo_banco.get().strip()
-        login = self.campo_login.get().strip()
-        senha = self.campo_senha.get()
-
-        if not all([host, banco, login, senha]):
-            messagebox.showwarning("Campos obrigatórios",
-                                    "Preencha todos os campos antes de conectar.",
-                                    parent=self)
-            return
-
-        try:
-            # Testa a conexão com os dados informados
-            conexao = psycopg2.connect(
-                host=host, database=banco,
-                user=login, password=senha,
-                client_encoding="WIN1252"
-            )
-            cursor = conexao.cursor()
-
-            # Cria a tabela alunos se ainda não existir
-            # (mesma estrutura usada em criando_postgree() do database.py)
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS alunos (
-                    id    SERIAL PRIMARY KEY,
-                    nome  TEXT NOT NULL,
-                    email TEXT NOT NULL,
-                    curso TEXT NOT NULL
-                )
-            """)
-            conexao.commit()
-            conexao.close()
-
-            # Salva as credenciais no arquivo conexao.ini
-            # (mesmo formato lido por conectar() no database.py)
-            config = configparser.ConfigParser()
-            config["POSTGRESQL"] = {
-                "host":     host,
-                "database": banco,
-                "user":     login,
-                "password": senha,
-            }
-            with open("conexao.ini", "w", encoding="utf-8") as arquivo:
-                config.write(arquivo)
-
-            messagebox.showinfo("Conexão estabelecida",
-                                 "PostgreSQL configurado com sucesso!",
-                                 parent=self)
-            self.destroy()
-            self.callback()  # Abre a tela principal
-
-        except psycopg2.OperationalError as erro:
-            # Exibe o erro e mantém a janela aberta para correção
-            messagebox.showerror("Erro de conexão",
-                                  f"Não foi possível conectar:\n\n{erro}",
-                                  parent=self)
-
-    def voltar(self):
-        """Fecha esta janela e reabre a tela de escolha do banco."""
-        self.destroy()
-        TelaEscolhaDB(self.master, self.callback)
-
-
-# ══════════════════════════════════════════════════════════════════
 #  CLASSE: App  (janela principal)
-#  Contém o formulário de cadastro e a lista de alunos.
-#  Todas as operações de banco chamam as funções do database.py.
+#  Versão SQLite — sem menu de escolha de banco.
+#  Ao iniciar, chama criar_tabela() do database.py para garantir
+#  que o banco e a tabela existam, depois abre direto o CRUD.
 # ══════════════════════════════════════════════════════════════════
 class App(tk.Tk):
 
     def __init__(self):
         super().__init__()
-        self.title("Sistema de Cadastro de Alunos")
+        self.title("Sistema de Cadastro de Alunos  —  SQLite")
         self.configure(bg=BG)
         self.minsize(860, 560)
         self.centralizar_janela(920, 630)
@@ -319,15 +51,13 @@ class App(tk.Tk):
         # Guarda o ID do aluno selecionado na lista (None = nenhum)
         self.id_selecionado = None
 
-        # Verifica se já existe banco configurado (SQLite ou PostgreSQL)
-        if not config_db():
-            # Primeira execução: esconde a janela principal e abre
-            # o menu de escolha do banco
-            self.withdraw()
-            TelaEscolhaDB(self, self.iniciar_aplicacao)
-        else:
-            # Banco já existe: inicia direto
-            self.iniciar_aplicacao()
+        # Garante que o banco e a tabela existam antes de qualquer operação
+        # Equivale à chamada criar_tabela() no main() do main.py
+        criar_tabela()
+
+        # Monta a interface e carrega os registros
+        self.construir_interface()
+        self.recarregar_lista()
 
     def centralizar_janela(self, largura, altura):
         """Posiciona a janela principal no centro da tela."""
@@ -335,26 +65,12 @@ class App(tk.Tk):
         y = (self.winfo_screenheight() - altura) // 2
         self.geometry(f"{largura}x{altura}+{x}+{y}")
 
-    def iniciar_aplicacao(self):
-        """
-        Ponto de entrada após o banco estar pronto.
-        Constrói a interface e carrega os alunos na lista.
-        """
-        self.deiconify()           # Exibe a janela principal
-        self.construir_interface() # Monta todos os widgets
-        self.recarregar_lista()    # Carrega registros do banco na Treeview
-
     # ──────────────────────────────────────────────────────────────
     # CONSTRUÇÃO DA INTERFACE
     # ──────────────────────────────────────────────────────────────
 
     def construir_interface(self):
         """Monta a barra superior e os dois painéis (formulário + lista)."""
-        import os
-
-        # Remove widgets anteriores (caso a janela seja reiniciada)
-        for widget in self.winfo_children():
-            widget.destroy()
 
         # ── Barra superior ──────────────────────────────────────
         barra_topo = tk.Frame(self, bg=ACCENT, height=50)
@@ -364,9 +80,8 @@ class App(tk.Tk):
         tk.Label(barra_topo, text="  🎓  Sistema de Cadastro de Alunos",
                  font=FONT_HEAD, bg=ACCENT, fg="white").pack(side="left", padx=10)
 
-        # Indica qual banco está em uso no canto superior direito
-        tipo_banco = "PostgreSQL" if os.path.exists("conexao.ini") else "SQLite"
-        tk.Label(barra_topo, text=f"● {tipo_banco}", font=FONT_SMALL,
+        # Indica o banco em uso no canto superior direito
+        tk.Label(barra_topo, text="● SQLite", font=FONT_SMALL,
                  bg=ACCENT, fg="#d4d0ff").pack(side="right", padx=16)
 
         # ── Corpo principal (dois painéis lado a lado) ───────────
@@ -549,7 +264,7 @@ class App(tk.Tk):
         for aluno in alunos:
             self.tabela.insert("", "end", iid=str(aluno[0]), values=aluno)
 
-        # Atualiza contador
+        # Atualiza o contador
         total = len(alunos)
         self.label_total.config(text=f"{total} registro{'s' if total != 1 else ''}")
 
